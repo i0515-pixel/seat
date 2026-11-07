@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>우리 교실 자리바꾸기</title>
+<style>
+:root{font-family:Arial,'Noto Sans KR',sans-serif;color:#203047;background:#f4f7fb}*{box-sizing:border-box}body{margin:0;padding:24px}.app{max-width:850px;margin:auto;display:flex;flex-direction:column;gap:16px}.panel{background:white;border:1px solid #dce4ef;border-radius:14px;padding:18px;box-shadow:0 3px 12px #19365a0a}h1{font-size:25px;margin:0 0 5px}h2{font-size:17px;margin:0 0 13px}.muted{color:#66758a;font-size:13px}textarea,input,select{font:inherit;border:1px solid #cbd5e1;border-radius:8px;padding:9px;background:white}textarea{width:100%;min-height:120px;resize:vertical;margin:10px 0}.controls{display:flex;gap:16px;flex-wrap:wrap;align-items:center}.controls label{display:flex;align-items:center;gap:7px;font-size:14px}.controls input{width:70px}.controls select{min-width:70px}.btns{display:flex;gap:9px;flex-wrap:wrap}.btn{border:1px solid #cbd5e1;background:#f5f7fa;color:#203047;border-radius:9px;padding:11px 15px;font-weight:bold;cursor:pointer}.btn.primary{background:#2563eb;color:white;border-color:#2563eb}.btn:active{transform:translateY(1px)}.full{width:100%;font-size:16px}.board{background:#e8f1ff;border:1px solid #c9daf4;border-radius:9px;text-align:center;padding:11px;font-weight:bold;letter-spacing:5px}.teacher{text-align:center;margin:10px auto 18px;border:1px solid #d6dfeb;border-radius:8px;padding:9px 28px;width:max-content;color:#52647b;font-size:13px;background:#f7f9fc}.room{display:flex;justify-content:center;gap:7px;align-items:stretch;overflow-x:auto;padding:4px 0}.block{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}.group-title{text-align:center;font-size:13px;font-weight:bold;color:#365477}.seat{min-height:66px;border:1px solid #cbd8e8;border-radius:9px;background:#f5f8fc;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:5px 2px;overflow-wrap:anywhere}.seat small{font-size:11px;color:#718096}.seat strong{font-size:clamp(11px,2vw,15px)}.seat.empty{border-style:dashed;color:#9aa6b5}.aisle{width:8px;flex-shrink:0}.status{text-align:center;color:#53657c;font-size:14px;margin-top:10px;min-height:20px}.summary{white-space:pre-wrap;line-height:1.8;color:#42536a;font-size:14px}.footer{text-align:center;font-size:12px;color:#7b8797}@media(max-width:520px){body{padding:12px}.panel{padding:13px}.room{gap:4px}.block{gap:6px}.seat{min-height:58px}.aisle{width:4px}}
+@media print{body{background:white;padding:0}.app{max-width:none}.panel{box-shadow:none;break-inside:avoid}.no-print{display:none!important}.seat{min-height:65px}}
+</style>
+</head>
+<body>
+<main class="app">
+<section class="panel">
+<h1>우리 교실 자리바꾸기</h1><div class="muted">학생 이름과 교실 구조를 설정하고 무작위로 자리를 배치해 보세요.</div>
+</section>
+<section class="panel">
+<h2>① 우리 반 학생 입력</h2><div class="muted">한 줄에 한 명씩 이름을 입력하세요. 쉼표로 구분해도 됩니다.</div>
+<textarea id="names" placeholder="김민수&#10;이서연&#10;박지호&#10;최유진"></textarea>
+<div class="controls"><span id="count" class="muted">학생 0명</span><button class="btn" id="example">예시 이름 넣기</button></div>
+</section>
+<section class="panel">
+<h2>② 교실 구조 설정</h2>
+<div class="controls"><label>분단 수 <select id="groups"><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select></label><label>분단별 줄 수 <select id="rows"><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option></select></label><span id="capacity" class="muted">총 9석</span></div>
+<p class="muted">각 분단은 앞에서 뒤로 배치됩니다. 학생 수가 좌석보다 적으면 빈자리가 표시됩니다.</p>
+</section>
+<section class="panel">
+<h2>③ 교실 자리 배치</h2>
+<div class="board">칠 판</div><div class="teacher">교탁</div>
+<div id="room" class="room"></div><div class="muted" style="text-align:center;margin-top:9px">앞자리 ↑　　뒷자리 ↓</div>
+<div class="btns" style="margin-top:17px"><button class="btn primary full" id="shuffle">🔀 자리 무작위로 바꾸기</button></div>
+<div class="btns" style="margin-top:9px"><button class="btn" id="again">한 번 더 섞기</button><button class="btn" id="reset">배치 초기화</button></div>
+<div id="status" class="status" aria-live="polite">이름을 입력하고 자리 배치를 시작하세요.</div>
+</section>
+<section class="panel">
+<h2>④ 자리 배치 결과</h2><div id="summary" class="summary">아직 배치 결과가 없습니다.</div>
+<div class="btns no-print" style="margin-top:14px"><button class="btn" id="copy">결과 복사</button><button class="btn" id="print">인쇄하기</button></div>
+</section><div class="footer">우리 교실 자리바꾸기 · 브라우저에서 바로 실행되는 오프라인 HTML</div>
+</main>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);let arrangement=null;
+const getNames=()=>$('names').value.split(/[\n,]+/).map(x=>x.trim()).filter(Boolean);
+const groups=()=>Number($('groups').value),rows=()=>Number($('rows').value),capacity=()=>groups()*rows();
+function updateCount(){const n=getNames().length;$('count').textContent=`학생 ${n}명`;$('capacity').textContent=`총 ${capacity()}석 · ${Math.max(0,n-capacity())}명 초과`}
+function render(){const room=$('room');room.innerHTML='';for(let g=0;g<groups();g++){const block=document.createElement('div');block.className='block';const title=document.createElement('div');title.className='group-title';title.textContent=`${g+1}분단`;block.append(title);for(let r=0;r<rows();r++){const i=g*rows()+r,cell=document.createElement('div');cell.className='seat'+(arrangement&&arrangement[i]?'':' empty');const small=document.createElement('small');small.textContent=`${r+1}줄`;const strong=document.createElement('strong');strong.textContent=arrangement?(arrangement[i]||'빈자리'):'미배정';cell.append(small,strong);block.append(cell)}room.append(block);if(g<groups()-1){const aisle=document.createElement('div');aisle.className='aisle';room.append(aisle)}}$('summary').textContent=arrangement?`배치 완료 · ${getNames().length}명 / ${capacity()}석\n\n${report()}`:'아직 배치 결과가 없습니다.'}
+function report(){if(!arrangement)return '';let out='';for(let g=0;g<groups();g++){out+=`${g+1}분단\n`;for(let r=0;r<rows();r++)out+=`  ${r+1}줄: ${arrangement[g*rows()+r]||'빈자리'}\n`;out+='\n'}return out}
+function shuffle(){const list=getNames();if(!list.length){$('status').textContent='학생 이름을 먼저 입력해 주세요.';return}if(list.length>capacity()){$('status').textContent=`좌석이 부족합니다. 현재 ${capacity()}석, 학생 ${list.length}명입니다.`;return}for(let i=list.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[list[i],list[j]]=[list[j],list[i]]}arrangement=Array.from({length:capacity()},(_,i)=>list[i]||'');render();$('status').textContent='새로운 자리 배치가 완성되었습니다!'}
+$('names').addEventListener('input',updateCount);
+['groups','rows'].forEach(id=>$(id).addEventListener('change',()=>{arrangement=null;updateCount();render();$('status').textContent='교실 구조가 변경되었습니다. 다시 배치해 주세요.'}));
+$('example').addEventListener('click',()=>{$('names').value='김민수\n이서연\n박지호\n최유진\n정하늘\n윤지우\n박서준\n한예린\n이도윤\n김하은\n정우진\n오지민\n강민재\n윤서아\n최준호\n임수빈\n송지호\n백예은';arrangement=null;updateCount();render()});
+$('shuffle').addEventListener('click',shuffle);$('again').addEventListener('click',shuffle);
+$('reset').addEventListener('click',()=>{arrangement=null;render();$('status').textContent='배치를 초기화했습니다.'});
+$('copy').addEventListener('click',async()=>{if(!arrangement){$('status').textContent='먼저 자리를 배치해 주세요.';return}const value='우리 반 자리 배치 결과\n칠판 / 교탁\n\n'+report();try{await navigator.clipboard.writeText(value);$('status').textContent='결과를 복사했습니다.'}catch(e){const a=document.createElement('textarea');a.value=value;document.body.append(a);a.select();document.execCommand('copy');a.remove();$('status').textContent='결과를 복사했습니다.'}});
+$('print').addEventListener('click',()=>{if(!arrangement){$('status').textContent='먼저 자리를 배치해 주세요.';return}window.print()});
+updateCount();render();
+})();
+</script>
+</body>
+</html>
